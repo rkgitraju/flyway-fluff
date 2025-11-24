@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>flyway-multi-db-project</artifactId>
+    <version>1.0.0</version>
+
+    <properties>
+        <db.url>jdbc:postgresql://localhost:5432/postgres</db.url>
+        <db.username>airflow</db.username> 
+        <db.password>airflow</db.password>
+        <db.schema>public</db.schema>
+        <flyway.locations>classpath:db/migration/default</flyway.locations>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <version>10.10.0</version>
+                <configuration>
+                    <url>${db.url}</url>
+                    <user>${db.username}</user>
+                    <password>${db.password}</password>
+                    <schemas>
+                        <schema>${db.schema}</schema>
+                    </schemas>
+                    <locations>
+                        <location>${flyway.locations}</location>
+                    </locations>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>42.7.3</version>
+                    </dependency>
+
+                    <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-database-postgresql</artifactId>
+                        <version>11.3.4</version>
+                    </dependency>
+
+                    
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>db1-local</id>
+            <properties>
+                <db.url>jdbc:postgresql://localhost:5432/db1</db.url>
+                <flyway.locations>classpath:db/migration/db1</flyway.locations>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>db2-local</id>
+            <properties>
+                 <db.url>jdbc:postgresql://localhost:5432/db2</db.url>
+                <flyway.locations>classpath:db/migration/db2</flyway.locations>
+            </properties>
+        </profile>
+    </profiles>
+</project>

@@ -1,0 +1,79 @@
+# version: '3.9'
+
+services:
+  # --- DB1 (Source) - Uses your existing data volume ---
+  db1:
+    image: postgres:13
+    container_name: db1_source
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: db1 # We assume you'll connect to 'db1' now
+    ports:
+      - "5432:5432" # Host Port 5432
+    volumes:
+      # Reuse your existing volume for the Source DB data
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    networks:
+      - common-network
+
+  # --- DB2 (Target) - New separate database for migrations ---
+  db2:
+    image: postgres:13
+    container_name: db2_target
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: db2 # Separate database for the target schema
+    ports:
+      - "5433:5432" # Host Port 5433
+    # Use a new volume for the target database to keep it isolated
+    volumes:
+      - postgres-db2-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    restart: always
+    networks:
+      - common-network
+      
+  # --- Jenkins Controller (CI Runner) ---
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    container_name: jenkins_local_ci
+    privileged: true
+    user: root
+    ports:
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins_data:/var/jenkins_home
+      # Mount the project directory into Jenkins for SCM
+      - type: bind
+        source: . 
+        target: /home/jenkins/workspace/flyway-project1
+    depends_on:
+      - db1
+      - db2
+    networks:
+      - common-network
+
+volumes:
+  # Your existing volume name
+  postgres-db-volume:
+  # New volume for the target DB
+  postgres-db2-volume:
+  # Volume for Jenkins data
+  jenkins_data:
+
+networks:
+  common-network:
+    driver: bridge
